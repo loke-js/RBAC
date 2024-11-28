@@ -80,5 +80,4 @@ npm run dev
 4. Push to the branch
 5. Create a new Pull Request
 
-## License
-[Specify your project's license]
+
