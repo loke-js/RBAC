@@ -95,7 +95,9 @@ const Login = async (req, res) => {
    // Set secure cookie
    res.cookie("token", token, {
        maxAge: 3 * 24 * 60 * 60 * 1000, 
-       sameSite: "strict", 
+       // cannot do in free deployment
+      //  sameSite: "strict", 
+      sameSite:'None',
    });
 
    // Respond with success
