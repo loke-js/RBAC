@@ -1,218 +1,175 @@
 import React, { useEffect, useState } from "react";
-import { deleteUser, get, post ,put } from "../services/ApiEndpoint";
+import { deleteUser, get, post, put } from "../services/ApiEndpoint";
 import { toast } from "react-hot-toast";
 
 export default function Admin() {
-  const [users, setUsers] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [users, setUsers] = useState([]); // Store the list of users
+  const [showModal, setShowModal] = useState(false); // Modal visibility state
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
 
-  // Though using [] would be better for an array of users
-  // Separate GetUsers function so we can reuse it
-  const GetUsers = async () => {
+  // Fetch all users from the server
+  const fetchUsers = async () => {
     try {
-      const request = await get("/api/admin/getuser");
-      const response = request.data;
-      if (request.status === 200) {
-        setUsers(response.users);
+      const response = await get("/api/admin/getuser");
+      if (response.status === 200) {
+        setUsers(response.data.users);
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
-  // const fetchCurrentUser = async () => {
-  //   try {
-  //     const request = await get("/api/user/me");
-  //     setCurrentUser(request.data.user);
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
-
-  // Modified useEffect to watch for refresh
+  // Fetch users when the component mounts
   useEffect(() => {
-    GetUsers();
-  }, []); // Will re-run when refresh changes
+    fetchUsers();
+  }, []);
 
-  // Modified handleDelete
+  // Delete a user and refresh the user list
   const handleDelete = async (id) => {
     try {
-      const request = await deleteUser(`/api/admin/delete/${id}`);
-      const response = request.data;
-      if (request.status === 200) {
-        toast.success(response.message);
-        // Call GetUsers to refresh the table
-        GetUsers();
-        // OR trigger refresh using:
-        // setRefresh(prev => !prev);
+      const response = await deleteUser(`/api/admin/delete/${id}`);
+      if (response.status === 200) {
+        toast.success(response.data.message);
+        fetchUsers(); // Refresh the list after deletion
       }
     } catch (error) {
-      if (error.response) {
-        toast.error(error.response.data.message);
-      }
+      toast.error(error.response?.data?.message || "Error deleting user");
     }
   };
 
+  // Handle input changes in the add user form
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Add a new user and refresh the list
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      const request = await post("/api/admin/adduser", formData);
-      const response = request.data;
-      if (request.status === 200) {
-        toast.success(response.message);
-        GetUsers();
-        setShowModal(false); // Close modal after success
-        // Clear form
-        setFormData({
-          name: "",
-          email: "",
-          password: "",
-        });
+      const response = await post("/api/admin/adduser", formData);
+      if (response.status === 200) {
+        toast.success(response.data.message);
+        fetchUsers(); // Refresh the list after adding
+        setShowModal(false); // Close the modal
+        setFormData({ name: "", email: "", password: "" }); // Reset form
       }
     } catch (error) {
-      if (error.response) {
-        toast.error(error.response.data.message);
-      }
+      toast.error(error.response?.data?.message || "Error adding user");
     }
   };
 
+  // Update a user's role and refresh the list
   const handleRoleChange = async (userId, newRole) => {
     try {
-      const request = await put(`/api/admin/update-role/${userId}`, { role: newRole });
-      const response = request.data;
-      if (response.success){
-        toast.success(response.message);
-        GetUsers(); // Refresh user list
+      const response = await put(`/api/admin/update-role/${userId}`, {
+        role: newRole,
+      });
+      if (response.status === 200) {
+        toast.success(response.data.message);
+        fetchUsers(); // Refresh the list after updating
       }
-    } catch (error){
-      if (error.response){
-        toast.error(error.response.data.message);
-      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error updating role");
     }
   };
 
-  useEffect(() => {
-    GetUsers();
-    // fetchCurrentUser();
-  }, []);
-
-
-
   return (
-    <>
-      <div className="admin-container">
-        <h2>Mange Users</h2>
-        <button className="add-user" onClick={() => setShowModal(true)}>
-          Add User
-        </button>
-        {showModal && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h3>Add New User</h3>
-                <button
-                  className="close-button"
-                  onClick={() => setShowModal(false)}
-                >
-                  X
+    <div className="admin-container">
+      <h2>Manage Users</h2>
+      <button className="add-user" onClick={() => setShowModal(true)}>
+        Add User
+      </button>
+
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Add New User</h3>
+              <button
+                className="close-button"
+                onClick={() => setShowModal(false)}
+              >
+                X
+              </button>
+            </div>
+            <form onSubmit={handleAddUser}>
+              <div className="form-group">
+                <label>Name:</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Email:</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Password:</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-buttons">
+                <button type="submit">Add User</button>
+                <button type="button" onClick={() => setShowModal(false)}>
+                  Cancel
                 </button>
               </div>
-
-              <form onSubmit={handleAddUser}>
-                <div className="form-group">
-                  <label>Name:</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Email:</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Password:</label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-buttons">
-                  <button type="submit">Add User</button>
-                  <button type="button" onClick={() => setShowModal(false)}>
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )}
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Current Role</th>
-              <th>Change Role</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users &&
-              users.map((elem, index) => {
-                return (
-                  <tr key={index}>
-                    <td>{elem.name}</td>
-                    <td>{elem.email}</td>
-                    <td>{elem.role}</td>
-                    <td>
+        </div>
+      )}
 
-                          <select
-                            value={elem.role}
-                            onChange={(e) =>
-                              handleRoleChange(elem._id, e.target.value)
-                            }
-                          >
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                          
-                    </td>
-                    <td>
-                      <button onClick={() => handleDelete(elem._id)}>
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
-      </div>
-    </>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Current Role</th>
+            <th>Change Role</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => (
+            <tr key={user._id}>
+              <td>{user.name}</td>
+              <td>{user.email}</td>
+              <td>{user.role}</td>
+              <td>
+                <select
+                  value={user.role}
+                  onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </td>
+              <td>
+                <button onClick={() => handleDelete(user._id)}>Delete</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

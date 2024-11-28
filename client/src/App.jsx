@@ -1,51 +1,47 @@
-import React, { useEffect } from 'react'
-import './App.css'
-import {BrowserRouter,Routes,Route} from 'react-router-dom'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Admin from './pages/Admin'
-import  { Toaster } from 'react-hot-toast';
-import AdminLaouts from './Layouts/AdminLaouts'
-import UserLayout from './Layouts/UserLayout'
-import PbulicLayout from './Layouts/PublicLayouts'
-import PublicLayouts from './Layouts/PublicLayouts'
-import { useDispatch,useSelector } from 'react-redux'
-import { updateUser } from './redux/AuthSlice'
-
+import React, { useEffect } from "react";
+import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Admin from "./pages/Admin";
+import { Toaster } from "react-hot-toast";
+import AdminLayout from "./Layouts/AdminLayout";
+import UserLayout from "./Layouts/UserLayout";
+import PublicLayout from "./Layouts/PublicLayout";
+import { useDispatch, useSelector } from "react-redux";
+import { updateUser } from "./redux/AuthSlice";
 
 export default function App() {
-  const user=useSelector((state)=>state.Auth.user)
-const disptch=useDispatch()
-  useEffect(()=>{
-         
-        disptch(updateUser())
-  },[user])
+  const user = useSelector((state) => state.Auth.user);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(updateUser());
+  }, [dispatch]);
 
   return (
     <>
-          <BrowserRouter>
-          <Toaster/>
-            <Routes>
-              
-              <Route path='/' element={<UserLayout/>} >
-              <Route index element={<Home/>}/>
+      <BrowserRouter>
+        <Toaster />
+        <Routes>
+          {/* Public Routes (Login, Register) */}
+          <Route path="/" element={<PublicLayout />}>
+            <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />
+          </Route>
 
-              </Route>
-              <Route path='/admin' element={<AdminLaouts/>}>
-              <Route index element={<Admin/>}/>
+          {/* User Routes (Home) */}
+          <Route path="/" element={<UserLayout />}>
+            <Route index element={<Home />} />
+          </Route>
 
-              </Route>
-              <Route path='/' element={<PublicLayouts/>}>
-              <Route path='login' element={<Login/>}/>
-              <Route path='register' element={<Register/>}/>
-                   
-              </Route>
-            </Routes>
-          </BrowserRouter>
-
-
-
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Admin />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
     </>
-  )
+  );
 }

@@ -1,56 +1,55 @@
-import { createSlice,createAsyncThunk} from '@reduxjs/toolkit';
-import { get } from '../services/ApiEndpoint';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { get } from "../services/ApiEndpoint";
 
-
-export const updateUser=createAsyncThunk('updateuser',async()=>{
-     try {
-        const request=await get('/api/auth/CheckUser')
-        const response=request.data
-        return response;
-     } catch (error) {
-          throw error
-     }
-})
-
-
-
- const initialState={
-    loading:null,
-    error:null,
-    user:null
- }
-const  AuthSlice=createSlice({
-    name:"Auth",
-    initialState:initialState,
-    reducers:{
-        SetUser:(state,action)=>{
-            state.user= action.payload
-        },
-        Logout:(state)=>{
-            state.user=null,
-            state.loading=null,
-            state.error=null
-        }
-    },
-
-    extraReducers:(builder)=>{
-        builder.addCase(updateUser.pending,(state)=>{
-            state.loading=true
-        })
-        builder.addCase(updateUser.fulfilled,(state,action)=>{
-            state.loading=null,
-            state.user=action.payload
-        })
-        builder.addCase(updateUser.rejected,(state,action)=>{
-            state.loading=null,
-            state.error=action.error.message,
-            state.user=null
-            
-        })
+// Async thunk to fetch user data
+export const updateUser = createAsyncThunk(
+  "auth/updateUser",
+  async (_, { rejectWithValue }) => {
+    try {
+      const request = await get("/api/auth/CheckUser");
+      return request.data;
+    } catch (error) {
+      // Return error message for better debugging
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
-   
-})
+  }
+);
 
-export const {SetUser,Logout}=AuthSlice.actions
+const initialState = {
+  loading: false, // More explicit than null
+  error: null,
+  user: null,
+};
 
-export default AuthSlice.reducer
+const AuthSlice = createSlice({
+  name: "Auth",
+  initialState,
+  reducers: {
+    SetUser: (state, action) => {
+      state.user = action.payload;
+    },
+    Logout: (state) => {
+      state.user = null;
+      state.loading = false;
+      state.error = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload; // Use rejected value
+        state.user = null;
+      });
+  },
+});
+
+export const { SetUser, Logout } = AuthSlice.actions;
+export default AuthSlice.reducer;
